@@ -34,7 +34,7 @@ function Header({
   const [title, setTitle] = useState(state.session.title);
 
   return (
-    <header className="flex items-center justify-between gap-3 py-4">
+    <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-4">
       <Link href="/" className="font-display text-lg text-ink-soft transition-colors hover:text-ink">
         ← Jhograr Judge
       </Link>
@@ -54,7 +54,7 @@ function Header({
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="max-w-44 truncate font-medium text-ink transition-colors hover:text-terra-deep"
+            className="max-w-[38vw] truncate font-medium sm:max-w-44 text-ink transition-colors hover:text-terra-deep"
             title="Rename"
           >
             {state.session.title} <span className="text-ink-soft/60">✎</span>

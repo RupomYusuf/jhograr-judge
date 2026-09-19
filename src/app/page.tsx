@@ -193,10 +193,10 @@ export default function Landing() {
 
       {/* Nav */}
       <nav className="flex items-center justify-between py-5">
-        <Link href="/" className="anim-float font-display text-xl">
+        <Link href="/" className="anim-float font-display text-lg sm:text-xl">
           Jhograr Judge <span className="text-terra">⚖</span>
         </Link>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-3 text-[13px] sm:gap-4 sm:text-sm">
           <Link href="/history" className="text-ink-soft transition-colors hover:text-ink">
             History
           </Link>
@@ -238,8 +238,8 @@ export default function Landing() {
           </button>
         </div>
 
-        <div className="hidden justify-end md:flex">
-          <HeroDemo />
+        <div className="flex justify-center md:justify-end">
+          <div className="w-full max-w-md md:max-w-none"><HeroDemo /></div>
         </div>
       </section>
 

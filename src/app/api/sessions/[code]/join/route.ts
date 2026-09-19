@@ -22,6 +22,10 @@ export async function POST(
     include: { participants: true },
   });
   if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  if (session.mode !== "pair") {
+    // Solo sessions have no second seat by design.
+    return NextResponse.json({ error: "This session has no second seat" }, { status: 403 });
+  }
   if (session.participants.some((p) => p.side === "B")) {
     return NextResponse.json({ error: "Someone already joined this session" }, { status: 409 });
   }

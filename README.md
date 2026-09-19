@@ -109,4 +109,5 @@ npm run dev         # dev server
 npm run build       # production build
 npm run test        # vitest
 npx prisma studio   # inspect the database
+node scripts/feature-audit.mjs   # 45-check E2E audit against the live URL
 ```

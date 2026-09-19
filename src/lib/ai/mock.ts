@@ -582,7 +582,7 @@ export class MockConflictAIProvider implements AIProvider {
   // ---- Solo mode: strict epistemic honesty ----
 
   reflectSolo(_history: ChatTurn[], userMessage: string): AIReply {
-    const turnIndex = _history.filter((t) => t.role === "user").length - 1;
+    const turnIndex = _history.filter((t) => t.role === "user").length;
     const lang = detectLanguage(userMessage);
     if (turnIndex <= 0) {
       return {
