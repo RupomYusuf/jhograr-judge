@@ -130,10 +130,19 @@ function ChatStage({ state }: { state: SessionState }) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [state.messages.length, busy]);
+
+  // auto-grow input up to ~6 lines
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!ta) return;
+    ta.style.height = "0px";
+    ta.style.height = Math.min(ta.scrollHeight, 140) + "px";
+  }, [draft]);
 
   async function send(text?: string) {
     const content = (text ?? draft).trim();
@@ -144,20 +153,15 @@ function ChatStage({ state }: { state: SessionState }) {
     setBusy(false);
   }
 
-  const lastJudge = [...state.messages].reverse().find((m) => m.role === "judge");
-  const tone = state.session.tone;
-  const thinkingLabel =
-    tone === "light"
-      ? "Judge shob shuntese… 👀"
-      : tone === "serious"
-        ? "Reading carefully…"
-        : "Judge is thinking…";
-
   return (
     <div>
       <div className="flex flex-col gap-3 py-2">
         {state.messages.map((m, i) => (
-          <div key={i} className={`flex gap-2.5 ${m.role === "user" ? "justify-end" : ""}`}>
+          <div
+            key={i}
+            className={`anim-pop flex gap-2.5 ${m.role === "user" ? "justify-end" : ""}`}
+            style={{ animationDelay: `${Math.min(i * 0.05, 0.4)}s` }}
+          >
             {m.role === "judge" ? <JudgeMark /> : null}
             <div className="max-w-[80%]">
               <div
@@ -167,10 +171,12 @@ function ChatStage({ state }: { state: SessionState }) {
               </div>
               {m.role === "judge" && m.chips && m.chips.length > 0 && i === state.messages.length - 1 ? (
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {m.chips.map((c) => (
-                    <Chip key={c} onClick={() => void send(c)} disabled={busy}>
-                      {c}
-                    </Chip>
+                  {m.chips.map((c, ci) => (
+                    <span key={c} className="anim-pop" style={{ animationDelay: `${0.25 + ci * 0.09}s` }}>
+                      <Chip onClick={() => void send(c)} disabled={busy}>
+                        {c}
+                      </Chip>
+                    </span>
                   ))}
                 </div>
               ) : null}
@@ -178,37 +184,54 @@ function ChatStage({ state }: { state: SessionState }) {
           </div>
         ))}
         {busy ? (
-          <div className="flex gap-2.5">
+          <div className="anim-pop flex gap-2.5">
             <JudgeMark thinking />
-            <div className="self-center">
-              <Spinner label={thinkingLabel} />
+            <div className="bubble-judge flex items-center gap-1.5 px-4 py-4">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="typing-dot" style={{ animationDelay: `${i * 0.18}s` }} />
+              ))}
             </div>
           </div>
         ) : null}
         <div ref={endRef} />
       </div>
 
-      {!busy && lastJudge?.chips?.length ? null : (
-        <div className="sticky bottom-4 mt-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void send();
+      <div className="sticky bottom-4 mt-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send();
+          }}
+          className="flex items-end gap-2 rounded-[24px] border border-line bg-card p-1.5 pl-5 shadow-[0_4px_24px_rgba(43,37,33,0.10)] transition-shadow focus-within:shadow-[0_6px_28px_rgba(192,91,59,0.16)]"
+        >
+          <textarea
+            ref={taRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
             }}
-            className="flex items-center gap-2 rounded-full border border-line bg-card p-1.5 pl-5 shadow-[0_4px_24px_rgba(43,37,33,0.10)]"
+            rows={1}
+            placeholder="Type it however it comes out…"
+            className="max-h-[140px] flex-1 resize-none self-center bg-transparent py-2.5 text-[15px] placeholder:text-ink-soft/50"
+          />
+          <button
+            type="submit"
+            disabled={!draft.trim() || busy}
+            aria-label="Send"
+            className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg transition-all duration-200 ${
+              draft.trim() && !busy
+                ? "scale-100 bg-terra text-white shadow-[0_2px_10px_rgba(192,91,59,0.3)] hover:scale-105 hover:bg-terra-deep"
+                : "scale-95 bg-cream-deep text-ink-soft/40"
+            }`}
           >
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Type it however it comes out…"
-              className="flex-1 bg-transparent text-[15px] placeholder:text-ink-soft/50"
-            />
-            <Button type="submit" disabled={!draft.trim() || busy} className="px-4 py-2">
-              Send
-            </Button>
-          </form>
-        </div>
-      )}
+            ↑
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -370,7 +393,7 @@ function MapStage({ state }: { state: SessionState }) {
 
   return (
     <div className="space-y-4">
-      <Card className="animate-rise space-y-5">
+      <Card className="stagger space-y-5">
         <div>
           <h2 className="font-display text-3xl">The Jhogra</h2>
           <p className="mt-1 text-sm text-ink-soft">
@@ -638,7 +661,7 @@ function AgreementStage({ state }: { state: SessionState }) {
   return (
     <div className="space-y-4">
       <Card className="animate-rise">
-        <h2 className="font-display text-3xl">{a.headline}</h2>
+        <h2 className="font-display text-3xl">{a.headline}{a.playfullyNamed ? <span className="anim-stamp ml-3 inline-block">🤝</span> : null}</h2>
         <div className="mt-4 space-y-4 text-[15px] leading-relaxed">
           <div>
             <SectionLabel>We figured out</SectionLabel>
@@ -980,7 +1003,7 @@ export default function SessionClient({ code }: { code: string }) {
   return (
     <Shell>
       <Header state={state} onRename={(t) => act({ type: "rename", title: t })} />
-      {body}
+      <div key={me.stage + ":" + session.status} className="anim-fade">{body}</div>
       <p className="mt-8 text-center text-[11px] text-ink-soft/60">
         Private room · {me.side === "A" ? "Side A" : "Side B"} · nothing is shared without your confirmation
       </p>
