@@ -1,0 +1,74 @@
+// Jhograr Judge — data model.
+//
+// PRIVACY BOUNDARIES (load-bearing):
+//  - PrivateMessage rows belong to exactly one participant and are NEVER returned
+//    to the other side. Only user-confirmed StructuredPerspective content flows
+//    into SharedConflictMap.
+//  - Safety disclosures live only on the participant row and are excluded from
+//    every shared projection.
+//  - Raw stories can be deleted independently of the shared map.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id              String   @id @default(cuid())
+  code            String   @unique // human-shareable, e.g. JJ-8X4K
+  title           String   @default("") // user-renameable, e.g. "The Seen-Zone Incident"
+  relationship    String // couple | friends | siblings | family | roommates | other
+  mode            String   @default("pair") // pair | solo | sayit
+  status          String   @default("waiting") // waiting|intake|map|resolution|agreement|followup|closed|safety
+  map             String? // JSON SharedConflictMap
+  mapFeedback     String? // JSON { a: "yes|almost|no", b: ... }
+  resolutions     String? // JSON ResolutionOption[]
+  votes           String? // JSON { a: {optionId, stance}, b: ... }
+  agreement       String? // JSON Agreement
+  agreementVotes  String? // JSON { a: "agree|change|notready", b: ... }
+  followUp        String? // JSON FollowUpResult
+  tone            String   @default("neutral") // light | neutral | serious — controls humor
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  participants    Participant[]
+  messages        Message[]
+
+  @@index([code])
+}
+
+model Participant {
+  id           String  @id @default(cuid())
+  sessionId    String
+  side         String // "A" | "B"
+  token        String  @unique @default(cuid()) // bearer credential; never shared
+  displayName  String  @default("")
+  stage        String  @default("chat") // chat|confirm|predict|done|safe_exit
+  perspective  String? // JSON StructuredPerspective (user-confirmed)
+  predictions  String? // JSON PerspectivePrediction
+  safetyFlag   Boolean @default(false)
+  rawDeleted   Boolean @default(false)
+  createdAt    DateTime @default(now())
+  session      Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  messages     Message[]
+
+  @@index([sessionId])
+}
+
+model Message {
+  id            String   @id @default(cuid())
+  sessionId     String
+  participantId String
+  role          String // "user" | "judge"
+  content       String
+  chips         String? // JSON quick-reply suggestions for judge messages
+  kind          String   @default("chat") // chat | system
+  createdAt     DateTime @default(now())
+  session       Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
+}
