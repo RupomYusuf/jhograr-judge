@@ -43,3 +43,6 @@ next-env.d.ts
 # local database (holds user session data — never publish)
 /prisma/dev.db
 /prisma/dev.db-journal
+
+.vercel
+.env*
